@@ -20,7 +20,6 @@ jobs:
           python-version: "3.11"
 
       - run: pip install -r requirements.txt
-      - run: playwright install chromium
 
       - run: playwright install chromium
 
