@@ -1,8 +1,30 @@
-from scrapers.idealista import scrape
+import os
+import requests
 
-items = scrape()
+from scrapers.idealista import scrape_idealista
 
-print("Found:", len(items))
+WEBHOOK = os.getenv("N8N_WEBHOOK_URL")
 
-for x in items:
-    print(x)
+
+def main():
+    listings = []
+
+    try:
+        idealista_items = scrape_idealista()
+        listings.extend(idealista_items)
+    except Exception as e:
+        print("Idealista error:", e)
+
+    print("Found:", len(listings))
+
+    if WEBHOOK and listings:
+        response = requests.post(
+            WEBHOOK,
+            json=listings,
+            timeout=60
+        )
+        print("Webhook status:", response.status_code)
+
+
+if __name__ == "__main__":
+    main()
