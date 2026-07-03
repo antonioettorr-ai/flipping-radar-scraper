@@ -1,43 +1,38 @@
 from playwright.sync_api import sync_playwright
+from bs4 import BeautifulSoup
 
+URL = "https://www.idealista.it/vendita-case/roma/pietralata/"
 
-def scrape_idealista():
+def scrape():
 
-    listings = []
+    results = []
 
     with sync_playwright() as p:
 
         browser = p.chromium.launch(headless=True)
-
-        page = browser.new_page(
-            viewport={"width": 1920, "height": 1080}
-        )
+        page = browser.new_page()
 
         page.goto(
-            "https://www.idealista.it/vendita-case/roma/pietralata/",
+            URL,
             wait_until="networkidle",
             timeout=60000
         )
 
-        cards = page.locator("article")
-
-        print("Idealista found:", cards.count())
-
-        for i in range(min(cards.count(), 50)):
-
-            try:
-
-                text = cards.nth(i).inner_text()
-
-                listings.append({
-                    "source": "idealista",
-                    "title": text[:150],
-                    "description": text
-                })
-
-            except:
-                pass
+        html = page.content()
 
         browser.close()
 
-    return listings
+    soup = BeautifulSoup(html, "html.parser")
+
+    for a in soup.find_all("a", href=True):
+
+        href = a["href"]
+
+        if "/immobile/" in href:
+
+            if href.startswith("/"):
+                href = "https://www.idealista.it" + href
+
+            results.append(href)
+
+    return list(set(results))
