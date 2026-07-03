@@ -3,14 +3,15 @@ from bs4 import BeautifulSoup
 
 URL = "https://www.idealista.it/vendita-case/roma/pietralata/"
 
-def scrape():
 
+def scrape_idealista():
     results = []
 
     with sync_playwright() as p:
-
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        page = browser.new_page(
+            viewport={"width": 1920, "height": 1080}
+        )
 
         page.goto(
             URL,
@@ -19,20 +20,35 @@ def scrape():
         )
 
         html = page.content()
-
         browser.close()
 
     soup = BeautifulSoup(html, "html.parser")
 
-    for a in soup.find_all("a", href=True):
+    links = set()
 
+    for a in soup.find_all("a", href=True):
         href = a["href"]
 
         if "/immobile/" in href:
-
             if href.startswith("/"):
                 href = "https://www.idealista.it" + href
 
-            results.append(href)
+            links.add(href.split("?")[0])
 
-    return list(set(results))
+    for href in links:
+        results.append({
+            "source": "idealista",
+            "city": "Roma",
+            "zone": "Pietralata",
+            "title": "Annuncio Idealista",
+            "price": 0,
+            "sqm": 0,
+            "rooms": 0,
+            "bathrooms": 0,
+            "url": href,
+            "description": ""
+        })
+
+    print("Idealista links:", len(results))
+
+    return results
